@@ -42,7 +42,7 @@ app.get('/', (req, res) => {
 
 // Start server
 app.listen(PORT, async () => {
-  console.log(`focknews.com running at http://localhost:${PORT}`);
+  console.log(`tagadata.com running at http://localhost:${PORT}`);
 
   // Initial fetch on startup
   console.log('Running initial fetch...');

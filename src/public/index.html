@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>focknews</title>
+  <title>tagadata - noticias de Chile</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -324,9 +324,13 @@
       border-radius: 50%;
     }
 
-    .source-dot.dw { background: #0088cc; box-shadow: 0 0 6px rgba(0,136,204,0.4); }
-    .source-dot.nbc { background: #ffb800; box-shadow: 0 0 6px rgba(255,184,0,0.4); }
-    .source-dot.mongabay { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.4); }
+    .source-dot.biobio { background: #e63946; box-shadow: 0 0 6px rgba(230,57,70,0.4); }
+    .source-dot.coop { background: #2196f3; box-shadow: 0 0 6px rgba(33,150,243,0.4); }
+    .source-dot.tercera { background: #ff9800; box-shadow: 0 0 6px rgba(255,152,0,0.4); }
+    .source-dot.ciper { background: #4caf50; box-shadow: 0 0 6px rgba(76,175,80,0.4); }
+    .source-dot.clinic { background: #9c27b0; box-shadow: 0 0 6px rgba(156,39,176,0.4); }
+    .source-dot.interf { background: #00bcd4; box-shadow: 0 0 6px rgba(0,188,212,0.4); }
+    .source-dot.descon { background: #ff5722; box-shadow: 0 0 6px rgba(255,87,34,0.4); }
     .source-dot.default { background: var(--text-muted); }
 
     .card.xl .source-tag { font-size: 0.8rem; padding: 0.25rem 0.7rem; }
@@ -467,30 +471,30 @@
   <div class="container">
     <header>
       <div class="logo">
-        <h1>fock<span class="accent">news</span></h1>
+        <h1>taga<span class="accent">data</span></h1>
         <div class="logo-dot"></div>
       </div>
       <div class="header-meta" id="header-meta">
-        <div><strong id="count">0</strong> articles</div>
-        <div>3 sources</div>
+        <div><strong id="count">0</strong> noticias</div>
+        <div id="sources-count">7 medios</div>
       </div>
     </header>
 
     <div class="live-bar">
       <div class="live-dot"></div>
-      <span>live</span> &mdash; auto-refreshes every 10 min
+      <span>en vivo</span> &mdash; se actualiza cada 10 min
     </div>
 
     <div class="toolbar">
       <div class="filters" id="filters"></div>
       <div class="separator"></div>
       <div class="sort-pills">
-        <button class="sort-pill active" data-sort="date">latest</button>
+        <button class="sort-pill active" data-sort="date">recientes</button>
         <button class="sort-pill" data-sort="score">trending</button>
       </div>
     </div>
 
-    <div id="content"><p class="loading">Fetching headlines</p></div>
+    <div id="content"><p class="loading">Cargando noticias</p></div>
   </div>
 
   <script>
@@ -498,9 +502,13 @@
     let currentSort = 'date';
 
     const SOURCE_COLORS = {
-      'Deutsche Welle': 'dw',
-      'NBC News': 'nbc',
-      'Mongabay': 'mongabay',
+      'BioBioChile': 'biobio',
+      'Cooperativa': 'coop',
+      'La Tercera': 'tercera',
+      'CIPER Chile': 'ciper',
+      'The Clinic': 'clinic',
+      'Interferencia': 'interf',
+      'El Desconcierto': 'descon',
     };
 
     async function loadNews() {
@@ -514,11 +522,11 @@
         renderFilters(data.sources);
         renderBoard(data.articles);
         document.getElementById('count').textContent = data.count;
-        document.querySelector('.header-meta div:last-child').textContent =
-          `${data.sources.length} sources`;
+        document.getElementById('sources-count').textContent =
+          `${data.sources.length} medios`;
       } catch {
         document.getElementById('content').innerHTML =
-          '<p class="empty">Failed to load. Try refreshing.</p>';
+          '<p class="empty">Error al cargar. Intenta refrescar.</p>';
       }
     }
 
@@ -534,7 +542,7 @@
 
     function renderFilters(sources) {
       const el = document.getElementById('filters');
-      const opts = [{ label: 'all', value: null }, ...sources.map(s => ({ label: s, value: s }))];
+      const opts = [{ label: 'todos', value: null }, ...sources.map(s => ({ label: s, value: s }))];
 
       el.innerHTML = opts.map(o =>
         `<button class="pill ${o.value === currentSource ? 'active' : ''}"
@@ -582,7 +590,7 @@
       const box = document.getElementById('content');
 
       if (!articles.length) {
-        box.innerHTML = '<p class="empty">No articles yet. Waiting for first fetch.</p>';
+        box.innerHTML = '<p class="empty">Sin noticias a\u00fan. Esperando primer fetch.</p>';
         return;
       }
 
@@ -662,10 +670,10 @@
       if (m < 60) return `${m}m`;
       const h = Math.floor(m / 60);
       if (h < 24) return `${h}h`;
-      if (h < 48) return 'yesterday';
+      if (h < 48) return 'ayer';
       const d = Math.floor(h / 24);
       if (d < 7) return `${d}d`;
-      return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return new Date(iso).toLocaleDateString('es-CL', { month: 'short', day: 'numeric' });
     }
 
     function esc(str) {

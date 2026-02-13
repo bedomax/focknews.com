@@ -1,8 +1,20 @@
-# focknews.com
+# tagadata.com
 
-MVP news aggregator board. Pulls headlines from Deutsche Welle, NBC News, and Mongabay via RSS feeds.
+Agregador de noticias de Chile. Board que muestra titulares de medios chilenos populares e independientes. Detecta noticias que se repiten entre medios y las destaca como trending.
 
-Shows only: title, source, link, and publication date. No full article content.
+Solo muestra: titular, medio, link y fecha. Sin contenido completo.
+
+## Medios
+
+| Medio | Tipo | Feed |
+|---|---|---|
+| BioBioChile | Independiente | RSS |
+| Cooperativa | Mainstream (radio) | RSS |
+| La Tercera | Mainstream | RSS |
+| CIPER Chile | Investigativo | RSS |
+| The Clinic | Independiente | RSS |
+| Interferencia | Independiente | RSS |
+| El Desconcierto | Independiente | RSS |
 
 ## Quick Start
 
@@ -12,65 +24,68 @@ npm install
 npm start
 ```
 
-Open http://localhost:3000
+Abre http://localhost:3000
 
-The server fetches news on startup and every 10 minutes automatically.
+El servidor hace fetch al iniciar y cada 10 minutos.
 
-## Manual Fetch
+## Fetch manual
 
 ```bash
 npm run fetch
 ```
 
-## Development
+## Desarrollo
 
 ```bash
 npm run dev
 ```
 
-Uses `node --watch` for auto-reload.
-
 ## API
 
-| Endpoint | Method | Description |
+| Endpoint | Metodo | Descripcion |
 |---|---|---|
 | `/` | GET | Board UI |
-| `/api/news` | GET | JSON list of articles |
-| `/api/news?source=NBC News` | GET | Filter by source |
-| `/api/fetch` | POST | Trigger manual fetch |
+| `/api/news` | GET | JSON con noticias |
+| `/api/news?source=BioBioChile` | GET | Filtrar por medio |
+| `/api/news?sort=score` | GET | Ordenar por trending |
+| `/api/fetch` | POST | Trigger fetch manual |
 
-## Deploy to Cloud Run
+## Ranking / Trending
+
+El sistema detecta cuando la misma noticia es cubierta por multiples medios usando fuzzy matching de titulares (fuzzball). Mas medios cubren la misma noticia = mayor score = card mas grande en el board.
+
+- 2 medios = badge "multi-source"
+- 3+ medios = badge "HOT", card gigante
+
+## Deploy a Cloud Run
 
 ```bash
-# Build and push
-gcloud builds submit --tag gcr.io/YOUR_PROJECT/focknews
-
-# Deploy
-gcloud run deploy focknews \
-  --image gcr.io/YOUR_PROJECT/focknews \
+gcloud builds submit --tag gcr.io/YOUR_PROJECT/tagadata
+gcloud run deploy tagadata \
+  --image gcr.io/YOUR_PROJECT/tagadata \
   --platform managed \
   --allow-unauthenticated \
   --memory 256Mi
 ```
 
-Or with Docker locally:
+O con Docker:
 
 ```bash
-docker build -t focknews .
-docker run -p 8080:8080 focknews
+docker build -t tagadata .
+docker run -p 8080:8080 tagadata
 ```
 
-## Adding a New Source
+## Agregar un nuevo medio
 
-1. Create `src/sources/newsource.js`:
+1. Crear `src/sources/nuevomedio.js`:
 
 ```js
 const Parser = require('rss-parser');
 const { normalizeUrl } = require('../utils');
 
 const parser = new Parser();
-const FEED_URL = 'https://example.com/feed.xml';
-const SOURCE_NAME = 'Example News';
+const FEED_URL = 'https://ejemplo.cl/feed/';
+const SOURCE_NAME = 'Nuevo Medio';
 
 async function fetch() {
   console.log(`[${SOURCE_NAME}] Fetching RSS feed...`);
@@ -90,22 +105,13 @@ async function fetch() {
 module.exports = { fetch, SOURCE_NAME, FEED_URL };
 ```
 
-2. Register it in `src/aggregator.js`:
-
-```js
-const sources = [
-  require('./sources/dw'),
-  require('./sources/nbc'),
-  require('./sources/mongabay'),
-  require('./sources/newsource'), // add here
-];
-```
-
-That's it. The new source appears automatically in the board filters.
+2. Registrarlo en `src/aggregator.js`
+3. Agregar color en `SOURCE_COLORS` en `src/public/index.html`
 
 ## Stack
 
 - **Backend:** Node.js + Express
-- **Database:** SQLite (via better-sqlite3)
-- **RSS Parsing:** rss-parser
-- **Frontend:** Vanilla HTML/CSS/JS
+- **Base de datos:** SQLite (better-sqlite3)
+- **RSS:** rss-parser
+- **Clustering:** fuzzball (fuzzy matching de titulares)
+- **Frontend:** HTML/CSS/JS vanilla

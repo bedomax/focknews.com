@@ -1,7 +1,7 @@
 {
-  "name": "focknews.com",
+  "name": "tagadata.com",
   "version": "1.0.0",
-  "description": "MVP news aggregator board",
+  "description": "Agregador de noticias de Chile - news board",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

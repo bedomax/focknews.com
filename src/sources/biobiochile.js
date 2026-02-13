@@ -2,8 +2,8 @@ const Parser = require('rss-parser');
 const { normalizeUrl } = require('../utils');
 
 const parser = new Parser();
-const FEED_URL = 'https://rss.dw.com/rdf/rss-en-all';
-const SOURCE_NAME = 'Deutsche Welle';
+const FEED_URL = 'https://www.biobiochile.cl/static/feed-rss';
+const SOURCE_NAME = 'BioBioChile';
 
 async function fetch() {
   console.log(`[${SOURCE_NAME}] Fetching RSS feed...`);

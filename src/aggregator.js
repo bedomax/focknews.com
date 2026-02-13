@@ -3,9 +3,13 @@ const { clusterAndScore } = require('./cluster');
 
 // Register all sources here
 const sources = [
-  require('./sources/dw'),
-  require('./sources/nbc'),
-  require('./sources/mongabay'),
+  require('./sources/biobiochile'),
+  require('./sources/cooperativa'),
+  require('./sources/latercera'),
+  require('./sources/ciper'),
+  require('./sources/theclinic'),
+  require('./sources/interferencia'),
+  require('./sources/eldesconcierto'),
 ];
 
 async function fetchAll() {
