@@ -1,0 +1,24 @@
+{
+  "name": "focknews.com",
+  "version": "1.0.0",
+  "description": "MVP news aggregator board",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "fetch": "node src/fetch.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bedomax/focknews.com.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "express": "^5.2.1",
+    "fuzzball": "^2.2.3",
+    "rss-parser": "^3.13.0"
+  }
+}
