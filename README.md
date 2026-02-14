@@ -56,13 +56,23 @@ El sistema detecta cuando la misma noticia es cubierta por multiples medios usan
 - 2 medios = badge "multi-source"
 - 3+ medios = badge "HOT", card gigante
 
-## Deploy a Vercel
+## Deploy a Google Cloud Run
 
-1. Crear proyecto en Vercel y conectar el repo
-2. Crear Postgres store en Storage → Create → Postgres
-3. Vincular el store al proyecto (env vars se inyectan automaticamente)
-4. Agregar `CRON_SECRET` en env vars
-5. Deploy — el cron corre cada hora y llena la DB
+```bash
+gcloud builds submit --tag gcr.io/YOUR_PROJECT/tagadata
+gcloud run deploy tagadata \
+  --image gcr.io/YOUR_PROJECT/tagadata \
+  --platform managed \
+  --allow-unauthenticated \
+  --memory 256Mi
+```
+
+O con Docker local:
+
+```bash
+docker build -t tagadata .
+docker run -p 8080:8080 tagadata
+```
 
 ## Agregar un nuevo pais
 
@@ -98,8 +108,9 @@ module.exports = { fetch, SOURCE_NAME, FEED_URL, COUNTRY };
 
 ## Stack
 
-- **Hosting:** Vercel (serverless functions + cron jobs)
-- **Base de datos:** Vercel Postgres (Neon)
+- **Backend:** Node.js + Express
+- **Base de datos:** SQLite (better-sqlite3)
 - **RSS:** rss-parser
 - **Clustering:** fuzzball (fuzzy matching de titulares)
 - **Frontend:** HTML/CSS/JS vanilla
+- **Deploy:** Docker / Google Cloud Run

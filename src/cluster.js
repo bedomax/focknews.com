@@ -21,9 +21,16 @@ function normalizeTitle(title) {
 
 /**
  * Cluster recent articles by title similarity and score them.
+ *
+ * Score formula:
+ *   base = uniqueSources * POINTS_PER_SOURCE  (30 per source)
+ *   recencyMultiplier = e^(-ageHours / 24)
+ *   score = base * recencyMultiplier
+ *
+ * Articles in a single-source cluster get score 0 (no cross-coverage signal).
  */
-async function clusterAndScore() {
-  const articles = await getAllRecent(HOURS_BACK);
+function clusterAndScore() {
+  const articles = getAllRecent(HOURS_BACK);
   if (!articles.length) return { clusters: 0, scored: 0 };
 
   const normalized = articles.map((a) => ({
@@ -89,7 +96,7 @@ async function clusterAndScore() {
     clusterId++;
   }
 
-  await updateClusters(updates);
+  updateClusters(updates);
 
   const multiSource = clusters.filter(
     (c) => new Set(c.map((a) => a.source)).size > 1

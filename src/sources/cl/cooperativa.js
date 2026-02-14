@@ -1,5 +1,5 @@
 const Parser = require('rss-parser');
-const { normalizeUrl } = require('../utils');
+const { normalizeUrl } = require('../../utils');
 
 const parser = new Parser();
 const FEED_URL = 'https://www.cooperativa.cl/noticias/site/tax/port/all/rss____1.xml';

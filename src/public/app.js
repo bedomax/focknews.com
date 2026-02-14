@@ -304,7 +304,7 @@ function esc(str) {
 }
 
 loadNews();
-setInterval(loadNews, 30 * 60 * 1000); // refresh every 30min (cron fetches hourly)
+setInterval(loadNews, 10 * 60 * 1000);
 
 // Re-render on resize to adapt collage layout
 let resizeTimer;

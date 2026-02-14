@@ -1,10 +1,12 @@
 {
   "name": "tagadata.com",
   "version": "1.0.0",
-  "description": "Agregador de noticias - news board",
+  "description": "Agregador de noticias multi-pais - news board",
+  "main": "src/server.js",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'no build step'"
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "fetch": "node src/fetch.js"
   },
   "repository": {
     "type": "git",
@@ -14,11 +16,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@vercel/postgres": "^0.10.0",
+    "better-sqlite3": "^12.6.2",
+    "express": "^5.2.1",
     "fuzzball": "^2.2.3",
     "rss-parser": "^3.13.0"
-  },
-  "devDependencies": {
-    "vercel": "^39.0.0"
   }
 }

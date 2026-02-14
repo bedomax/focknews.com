@@ -1,5 +1,5 @@
 const Parser = require('rss-parser');
-const { normalizeUrl } = require('../utils');
+const { normalizeUrl } = require('../../utils');
 
 const parser = new Parser();
 const FEED_URL = 'https://www.latercera.com/rss/';
