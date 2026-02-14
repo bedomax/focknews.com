@@ -2,8 +2,9 @@ const Parser = require('rss-parser');
 const { normalizeUrl } = require('../utils');
 
 const parser = new Parser();
-const FEED_URL = 'https://www.eldesconcierto.cl/feed/';
-const SOURCE_NAME = 'El Desconcierto';
+const FEED_URL = 'https://www.elcomercio.com/feed/';
+const SOURCE_NAME = 'El Comercio';
+const COUNTRY = 'ec';
 
 async function fetch() {
   console.log(`[${SOURCE_NAME}] Fetching RSS feed...`);
@@ -20,4 +21,4 @@ async function fetch() {
   return articles;
 }
 
-module.exports = { fetch, SOURCE_NAME, FEED_URL };
+module.exports = { fetch, SOURCE_NAME, FEED_URL, COUNTRY };

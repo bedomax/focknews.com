@@ -1,0 +1,13 @@
+{
+  "buildCommand": "",
+  "outputDirectory": "src/public",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/fetch",
+      "schedule": "0 * * * *"
+    }
+  ]
+}

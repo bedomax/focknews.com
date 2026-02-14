@@ -1,118 +1,143 @@
-const Database = require('better-sqlite3');
-const path = require('path');
+const { sql } = require('@vercel/postgres');
 
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'data', 'news.db');
+let initialized = false;
 
-// Ensure data directory exists
-const fs = require('fs');
-fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+async function ensureSchema() {
+  if (initialized) return;
+  await sql`
+    CREATE TABLE IF NOT EXISTS news (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      url TEXT NOT NULL UNIQUE,
+      source TEXT NOT NULL,
+      country TEXT NOT NULL DEFAULT 'cl',
+      published_at TIMESTAMPTZ,
+      fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      cluster_id INTEGER,
+      score REAL DEFAULT 0
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_news_published_at ON news(published_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_news_source ON news(source)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_news_cluster_id ON news(cluster_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_news_score ON news(score DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_news_country ON news(country)`;
+  initialized = true;
+}
 
-const db = new Database(DB_PATH);
-
-// Enable WAL mode for better concurrent read performance
-db.pragma('journal_mode = WAL');
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS news (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    url TEXT NOT NULL UNIQUE,
-    source TEXT NOT NULL,
-    published_at DATETIME,
-    fetched_at DATETIME NOT NULL DEFAULT (datetime('now')),
-    cluster_id INTEGER,
-    score REAL DEFAULT 0
-  )
-`);
-
-db.exec(`
-  CREATE INDEX IF NOT EXISTS idx_news_published_at ON news(published_at DESC);
-  CREATE INDEX IF NOT EXISTS idx_news_source ON news(source);
-  CREATE INDEX IF NOT EXISTS idx_news_cluster_id ON news(cluster_id);
-  CREATE INDEX IF NOT EXISTS idx_news_score ON news(score DESC);
-`);
-
-// Migrate: add columns if they don't exist (safe for existing DBs)
-try { db.exec('ALTER TABLE news ADD COLUMN cluster_id INTEGER'); } catch {}
-try { db.exec('ALTER TABLE news ADD COLUMN score REAL DEFAULT 0'); } catch {}
-
-const insertStmt = db.prepare(`
-  INSERT OR IGNORE INTO news (title, url, source, published_at)
-  VALUES (@title, @url, @source, @published_at)
-`);
-
-const insertMany = db.transaction((articles) => {
+async function insertMany(articles) {
+  await ensureSchema();
   let inserted = 0;
-  for (const article of articles) {
-    const result = insertStmt.run(article);
-    if (result.changes > 0) inserted++;
+  for (const a of articles) {
+    const result = await sql`
+      INSERT INTO news (title, url, source, country, published_at)
+      VALUES (${a.title}, ${a.url}, ${a.source}, ${a.country}, ${a.published_at})
+      ON CONFLICT (url) DO NOTHING
+    `;
+    if (result.rowCount > 0) inserted++;
   }
   return inserted;
-});
+}
 
-function getNews({ source, limit = 200, offset = 0, sort = 'date' } = {}) {
-  let query = 'SELECT * FROM news';
-  const params = {};
+async function getNews({ source, country, ids, limit = 200, offset = 0, sort = 'date' } = {}) {
+  await ensureSchema();
 
+  const conditions = [];
+  const params = [];
+  let idx = 1;
+
+  if (country) {
+    conditions.push(`country = $${idx++}`);
+    params.push(country);
+  }
   if (source) {
-    query += ' WHERE source = @source';
-    params.source = source;
+    conditions.push(`source = $${idx++}`);
+    params.push(source);
+  }
+  if (ids && ids.length > 0) {
+    const placeholders = ids.map((_, i) => `$${idx + i}`).join(',');
+    conditions.push(`id IN (${placeholders})`);
+    params.push(...ids);
+    idx += ids.length;
   }
 
-  if (sort === 'score') {
-    query += ' ORDER BY score DESC, published_at DESC NULLS LAST';
-  } else {
-    query += ' ORDER BY published_at DESC NULLS LAST, fetched_at DESC';
+  const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+  const orderBy = sort === 'score'
+    ? 'ORDER BY score DESC, published_at DESC NULLS LAST'
+    : 'ORDER BY published_at DESC NULLS LAST, fetched_at DESC';
+
+  params.push(limit, offset);
+  const query = `SELECT * FROM news ${where} ${orderBy} LIMIT $${idx++} OFFSET $${idx}`;
+
+  const { rows } = await sql.query(query, params);
+  return rows;
+}
+
+async function getCount({ source, country } = {}) {
+  await ensureSchema();
+
+  const conditions = [];
+  const params = [];
+  let idx = 1;
+
+  if (country) {
+    conditions.push(`country = $${idx++}`);
+    params.push(country);
   }
-
-  query += ' LIMIT @limit OFFSET @offset';
-  params.limit = limit;
-  params.offset = offset;
-
-  return db.prepare(query).all(params);
-}
-
-function getSources() {
-  return db.prepare('SELECT DISTINCT source FROM news ORDER BY source').pluck().all();
-}
-
-function getCount({ source } = {}) {
-  let query = 'SELECT COUNT(*) as count FROM news';
-  const params = {};
   if (source) {
-    query += ' WHERE source = @source';
-    params.source = source;
+    conditions.push(`source = $${idx++}`);
+    params.push(source);
   }
-  return db.prepare(query).get(params).count;
+
+  const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+  const { rows } = await sql.query(`SELECT COUNT(*) as count FROM news ${where}`, params);
+  return parseInt(rows[0].count, 10);
 }
 
-function getAllRecent(hoursBack = 72) {
-  return db.prepare(`
-    SELECT id, title, source, published_at
+async function getAllRecent(hoursBack = 72, country = null) {
+  await ensureSchema();
+
+  const interval = `${hoursBack} hours`;
+  if (country) {
+    const { rows } = await sql`
+      SELECT id, title, source, country, published_at
+      FROM news
+      WHERE (published_at > NOW() - CAST(${interval} AS INTERVAL)
+         OR published_at IS NULL)
+        AND country = ${country}
+      ORDER BY published_at DESC NULLS LAST
+    `;
+    return rows;
+  }
+
+  const { rows } = await sql`
+    SELECT id, title, source, country, published_at
     FROM news
-    WHERE published_at > datetime('now', '-' || @hours || ' hours')
+    WHERE published_at > NOW() - CAST(${interval} AS INTERVAL)
        OR published_at IS NULL
     ORDER BY published_at DESC NULLS LAST
-  `).all({ hours: hoursBack });
+  `;
+  return rows;
 }
 
-const updateClusterStmt = db.prepare(
-  'UPDATE news SET cluster_id = @cluster_id, score = @score WHERE id = @id'
-);
-
-const updateClusters = db.transaction((updates) => {
+async function updateClusters(updates) {
+  await ensureSchema();
   for (const u of updates) {
-    updateClusterStmt.run(u);
+    await sql`
+      UPDATE news SET cluster_id = ${u.cluster_id}, score = ${u.score} WHERE id = ${u.id}
+    `;
   }
-});
+}
 
-function getClusterSources(clusterId) {
-  return db.prepare(
-    'SELECT DISTINCT source FROM news WHERE cluster_id = @cluster_id'
-  ).pluck().all({ cluster_id: clusterId });
+async function getClusterSources(clusterId) {
+  await ensureSchema();
+  const { rows } = await sql`
+    SELECT DISTINCT source FROM news WHERE cluster_id = ${clusterId}
+  `;
+  return rows.map(r => r.source);
 }
 
 module.exports = {
-  db, insertMany, getNews, getSources, getCount,
-  getAllRecent, updateClusters, getClusterSources,
+  insertMany, getNews, getCount,
+  getAllRecent, updateClusters, getClusterSources, ensureSchema,
 };

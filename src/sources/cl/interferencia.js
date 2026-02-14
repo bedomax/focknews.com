@@ -4,6 +4,7 @@ const { normalizeUrl } = require('../utils');
 const parser = new Parser();
 const FEED_URL = 'https://interferencia.cl/rss.xml';
 const SOURCE_NAME = 'Interferencia';
+const COUNTRY = 'cl';
 
 async function fetch() {
   console.log(`[${SOURCE_NAME}] Fetching RSS feed...`);
@@ -20,4 +21,4 @@ async function fetch() {
   return articles;
 }
 
-module.exports = { fetch, SOURCE_NAME, FEED_URL };
+module.exports = { fetch, SOURCE_NAME, FEED_URL, COUNTRY };

@@ -1,24 +1,24 @@
 {
   "name": "tagadata.com",
   "version": "1.0.0",
-  "description": "Agregador de noticias de Chile - news board",
-  "main": "src/server.js",
+  "description": "Agregador de noticias - news board",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
-    "fetch": "node src/fetch.js"
+    "dev": "vercel dev",
+    "build": "echo 'no build step'"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bedomax/focknews.com.git"
+    "url": "git+https://github.com/bedomax/tagadata.com.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "better-sqlite3": "^12.6.2",
-    "express": "^5.2.1",
+    "@vercel/postgres": "^0.10.0",
     "fuzzball": "^2.2.3",
     "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "vercel": "^39.0.0"
   }
 }

@@ -1,16 +1,29 @@
 const { insertMany } = require('./db');
 const { clusterAndScore } = require('./cluster');
 
-// Register all sources here
-const sources = [
-  require('./sources/biobiochile'),
-  require('./sources/cooperativa'),
-  require('./sources/latercera'),
-  require('./sources/ciper'),
-  require('./sources/theclinic'),
-  require('./sources/interferencia'),
-  require('./sources/eldesconcierto'),
+// Register all sources here, grouped by country
+const allSources = [
+  // Chile
+  require('./sources/cl/biobiochile'),
+  require('./sources/cl/cooperativa'),
+  require('./sources/cl/latercera'),
+  require('./sources/cl/ciper'),
+  require('./sources/cl/theclinic'),
+  require('./sources/cl/interferencia'),
+  require('./sources/cl/eldesconcierto'),
+  // Ecuador
+  require('./sources/ec/elcomercio'),
+  require('./sources/ec/eluniverso'),
+  require('./sources/ec/metroecuador'),
+  require('./sources/ec/gk'),
+  require('./sources/ec/labarraespaciadora'),
+  require('./sources/ec/planv'),
+  require('./sources/ec/confirmado'),
 ];
+
+function getSourcesByCountry(country) {
+  return allSources.filter(s => s.COUNTRY === country);
+}
 
 async function fetchAll() {
   const startTime = Date.now();
@@ -21,18 +34,19 @@ async function fetchAll() {
   let totalParsed = 0;
 
   const results = await Promise.allSettled(
-    sources.map((source) => source.fetch())
+    allSources.map((source) => source.fetch())
   );
 
   for (let i = 0; i < results.length; i++) {
-    const sourceName = sources[i].SOURCE_NAME;
+    const sourceName = allSources[i].SOURCE_NAME;
+    const country = allSources[i].COUNTRY;
     const result = results[i];
 
     if (result.status === 'fulfilled') {
-      const articles = result.value;
+      const articles = result.value.map(a => ({ ...a, country }));
       totalParsed += articles.length;
       try {
-        const inserted = insertMany(articles);
+        const inserted = await insertMany(articles);
         totalInserted += inserted;
         console.log(`[${sourceName}] Inserted ${inserted} new articles (${articles.length} total parsed)`);
       } catch (err) {
@@ -44,7 +58,7 @@ async function fetchAll() {
   }
 
   // Run clustering after inserting new articles
-  const clusterResult = clusterAndScore();
+  const clusterResult = await clusterAndScore();
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   console.log(`[Aggregator] Done in ${elapsed}s — ${totalInserted} new articles inserted (${totalParsed} parsed)`);
@@ -53,4 +67,4 @@ async function fetchAll() {
   return { totalInserted, totalParsed, ...clusterResult };
 }
 
-module.exports = { fetchAll, sources };
+module.exports = { fetchAll, allSources, getSourcesByCountry };
