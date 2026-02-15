@@ -42,6 +42,15 @@ function setCountry(cc) {
   currentTag = null;
   localStorage.setItem('country', cc);
   countrySelect.value = cc;
+  const country = COUNTRIES.find(c => c.code === cc);
+  const name = country ? country.name : cc.toUpperCase();
+  document.title = `tagadata - noticias de ${name} en vivo`;
+  const desc = `Noticias de ${name} en tiempo real. Titulares de medios independientes y mainstream.`;
+  document.querySelector('meta[name="description"]')?.setAttribute('content', desc);
+  document.querySelector('meta[property="og:title"]')?.setAttribute('content', `tagadata - noticias de ${name}`);
+  document.querySelector('meta[property="og:description"]')?.setAttribute('content', desc);
+  document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', `tagadata - noticias de ${name}`);
+  document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', desc);
   loadNews();
 }
 
