@@ -28,6 +28,15 @@ countrySelect.innerHTML = COUNTRIES.map(c =>
 ).join('');
 countrySelect.addEventListener('change', () => setCountry(countrySelect.value));
 
+// Logo click → reset to home
+document.querySelector('.logo').addEventListener('click', () => {
+  currentTag = null;
+  currentSort = 'date';
+  document.querySelectorAll('.sort-pill').forEach(b => b.classList.remove('active'));
+  document.querySelector('.sort-pill[data-sort="date"]').classList.add('active');
+  loadNews();
+});
+
 function setCountry(cc) {
   currentCountry = cc;
   currentTag = null;
@@ -58,7 +67,7 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('theme', next);
   updateThemeIcon(next);
-  loadNews(); // re-render with correct inline colors
+  loadNews();
 });
 
 function updateThemeIcon(theme) {
@@ -73,67 +82,56 @@ function getSourceColors() {
   return SOURCE_COLORS_BY_COUNTRY[currentCountry] || SOURCE_COLORS_BY_COUNTRY.cl;
 }
 
-// Responsive collage layouts per breakpoint
-// Desktop: 6 cols x 5 rows
+// ---- Collage layouts using 12-column grid ----
+// Desktop: 12 cols, varied sizes for a true collage feel
+const LAYOUT_12 = [
+  { col: '1 / span 5',  row: '1 / span 3', cls: 'hero',    titleRem: 2.0,  fw: 700, clamp: 5, color: '#fff' },
+  { col: '6 / span 4',  row: '1 / span 2', cls: 'feature', titleRem: 1.2,  fw: 600, clamp: 3, color: '#eee' },
+  { col: '10 / span 3', row: '1 / span 1', cls: 'compact', titleRem: 0.85, fw: 500, clamp: 2, color: '#ccc' },
+  { col: '10 / span 3', row: '2 / span 1', cls: 'compact', titleRem: 0.85, fw: 500, clamp: 2, color: '#ccc' },
+  { col: '6 / span 3',  row: '3 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
+  { col: '9 / span 4',  row: '3 / span 2', cls: 'feature', titleRem: 1.1,  fw: 600, clamp: 3, color: '#ddd' },
+  { col: '1 / span 3',  row: '4 / span 2', cls: 'feature', titleRem: 1.05, fw: 600, clamp: 3, color: '#ddd' },
+  { col: '4 / span 2',  row: '4 / span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
+  { col: '6 / span 3',  row: '4 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
+  { col: '4 / span 5',  row: '5 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
+  { col: '9 / span 4',  row: '5 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
+];
+
+// Tablet: 6 cols
 const LAYOUT_6 = [
-  { col: 'span 3', row: 'span 2', cls: 'hero',    titleRem: 1.8,  fw: 700, clamp: 4, color: '#fff' },
-  { col: 'span 2', row: 'span 2', cls: 'feature', titleRem: 1.2,  fw: 600, clamp: 3, color: '#eee' },
-  { col: 'span 1', row: 'span 2', cls: 'feature', titleRem: 0.95, fw: 600, clamp: 4, color: '#ddd' },
-  { col: 'span 2', row: 'span 1', cls: 'feature', titleRem: 0.95, fw: 500, clamp: 2, color: '#ddd' },
-  { col: 'span 2', row: 'span 1', cls: 'compact', titleRem: 0.95, fw: 500, clamp: 2, color: '#ccc' },
-  { col: 'span 2', row: 'span 1', cls: 'compact', titleRem: 0.95, fw: 500, clamp: 2, color: '#ccc' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 3, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 3, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 3, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 3, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 3, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 3, color: '#aaa' },
-  { col: 'span 2', row: 'span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 2', row: 'span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 2', row: 'span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
+  { col: '1 / span 4',  row: '1 / span 2', cls: 'hero',    titleRem: 1.5,  fw: 700, clamp: 4, color: '#fff' },
+  { col: '5 / span 2',  row: '1 / span 1', cls: 'feature', titleRem: 0.95, fw: 600, clamp: 2, color: '#eee' },
+  { col: '5 / span 2',  row: '2 / span 1', cls: 'compact', titleRem: 0.85, fw: 500, clamp: 2, color: '#ccc' },
+  { col: '1 / span 3',  row: '3 / span 1', cls: 'feature', titleRem: 1.0,  fw: 600, clamp: 2, color: '#ddd' },
+  { col: '4 / span 3',  row: '3 / span 1', cls: 'compact', titleRem: 0.9,  fw: 500, clamp: 2, color: '#ccc' },
+  { col: '1 / span 2',  row: '4 / span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
+  { col: '3 / span 2',  row: '4 / span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
+  { col: '5 / span 2',  row: '4 / span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
+  { col: '1 / span 3',  row: '5 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
+  { col: '4 / span 3',  row: '5 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
+  { col: '1 / span 6',  row: '6 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
 ];
 
-// Tablet: 4 cols x 5 rows
+// Mobile: 4 cols, scrollable
 const LAYOUT_4 = [
-  { col: 'span 4', row: 'span 2', cls: 'hero',    titleRem: 1.5,  fw: 700, clamp: 3, color: '#fff' },
-  { col: 'span 2', row: 'span 1', cls: 'feature', titleRem: 1.0,  fw: 600, clamp: 2, color: '#eee' },
-  { col: 'span 2', row: 'span 1', cls: 'feature', titleRem: 1.0,  fw: 600, clamp: 2, color: '#ddd' },
-  { col: 'span 2', row: 'span 1', cls: 'compact', titleRem: 0.9,  fw: 500, clamp: 2, color: '#ccc' },
-  { col: 'span 2', row: 'span 1', cls: 'compact', titleRem: 0.9,  fw: 500, clamp: 2, color: '#ccc' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 2', row: 'span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 2', row: 'span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
+  { col: '1 / span 4',  row: 'auto', cls: 'hero',    titleRem: 1.3,  fw: 700, clamp: 3, color: '#fff' },
+  { col: '1 / span 2',  row: 'auto', cls: 'feature', titleRem: 0.95, fw: 600, clamp: 2, color: '#eee' },
+  { col: '3 / span 2',  row: 'auto', cls: 'feature', titleRem: 0.95, fw: 600, clamp: 2, color: '#ddd' },
+  { col: '1 / span 3',  row: 'auto', cls: 'compact', titleRem: 0.85, fw: 500, clamp: 2, color: '#ccc' },
+  { col: '4 / span 1',  row: 'auto', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#ccc' },
+  { col: '1 / span 2',  row: 'auto', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
+  { col: '3 / span 2',  row: 'auto', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
+  { col: '1 / span 4',  row: 'auto', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
+  { col: '1 / span 2',  row: 'auto', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
+  { col: '3 / span 2',  row: 'auto', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
+  { col: '1 / span 4',  row: 'auto', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
 ];
 
-// Mobile: 2 cols, scrollable
-const LAYOUT_2 = [
-  { col: 'span 2', row: 'span 1', cls: 'hero',    titleRem: 1.3,  fw: 700, clamp: 3, color: '#fff' },
-  { col: 'span 2', row: 'span 1', cls: 'feature', titleRem: 1.0,  fw: 600, clamp: 2, color: '#eee' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.85, fw: 500, clamp: 2, color: '#ddd' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.85, fw: 500, clamp: 2, color: '#ddd' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#ccc' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#ccc' },
-  { col: 'span 2', row: 'span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 2', row: 'span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 1', row: 'span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
-  { col: 'span 2', row: 'span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
-];
-
-// Single column mobile
-const LAYOUT_1 = Array.from({ length: 15 }, (_, i) => ({
-  col: 'span 1', row: 'span 1',
+// Small mobile: 2 cols
+const LAYOUT_2 = Array.from({ length: 11 }, (_, i) => ({
+  col: i === 0 ? '1 / span 2' : `${(i % 2) + 1} / span 1`,
+  row: 'auto',
   cls: i === 0 ? 'hero' : i < 3 ? 'feature' : 'compact',
   titleRem: i === 0 ? 1.2 : i < 3 ? 0.95 : 0.85,
   fw: i === 0 ? 700 : i < 3 ? 600 : 400,
@@ -143,10 +141,10 @@ const LAYOUT_1 = Array.from({ length: 15 }, (_, i) => ({
 
 function getLayout() {
   const w = window.innerWidth;
-  if (w <= 520) return LAYOUT_1;
-  if (w <= 768) return LAYOUT_2;
-  if (w <= 1100) return LAYOUT_4;
-  return LAYOUT_6;
+  if (w <= 520) return LAYOUT_2;
+  if (w <= 768) return LAYOUT_4;
+  if (w <= 1100) return LAYOUT_6;
+  return LAYOUT_12;
 }
 
 async function loadNews() {
@@ -247,14 +245,13 @@ function renderBoard(articles) {
     });
   }
 
-  const visible = cards.slice(0, 15);
-
   const currentLayout = getLayout();
+  const visible = cards.slice(0, currentLayout.length);
+
   box.innerHTML = `<div class="board">${visible.map((a, i) => {
     const layout = currentLayout[i] || currentLayout[currentLayout.length - 1];
     const s = a.score || 0;
 
-    // Override layout for high-score items
     const titleRem = s >= 60 ? Math.max(layout.titleRem, 1.8) : s > 0 ? Math.max(layout.titleRem, 1.2) : layout.titleRem;
     const fw = s >= 60 ? 700 : s > 0 ? 600 : layout.fw;
     const dark = isDark();
@@ -304,7 +301,7 @@ function esc(str) {
 }
 
 loadNews();
-setInterval(loadNews, 10 * 60 * 1000);
+setInterval(loadNews, 5 * 60 * 1000);
 
 // Re-render on resize to adapt collage layout
 let resizeTimer;

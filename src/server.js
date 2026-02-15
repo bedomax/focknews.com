@@ -6,7 +6,7 @@ const { extractTags, getArticleIdsByTag } = require('./tags');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const FETCH_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+const FETCH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 const VALID_COUNTRIES = ['cl', 'ec'];
 
@@ -90,7 +90,7 @@ app.listen(PORT, async () => {
   console.log('Running initial fetch...');
   await fetchAll();
 
-  // Schedule recurring fetch every 10 minutes
+  // Schedule recurring fetch every 5 minutes
   setInterval(() => {
     fetchAll().catch((err) => console.error('Scheduled fetch error:', err));
   }, FETCH_INTERVAL_MS);
