@@ -105,6 +105,10 @@ const LAYOUT_12 = [
   { col: '6 / span 3',  row: '4 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
   { col: '4 / span 5',  row: '5 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
   { col: '9 / span 4',  row: '5 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
+  { col: '1 / span 4',  row: '6 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
+  { col: '5 / span 4',  row: '6 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
+  { col: '9 / span 4',  row: '6 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
+  { col: '1 / span 6',  row: '7 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
 ];
 
 // Tablet: 6 cols
@@ -120,6 +124,10 @@ const LAYOUT_6 = [
   { col: '1 / span 3',  row: '5 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
   { col: '4 / span 3',  row: '5 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
   { col: '1 / span 6',  row: '6 / span 1', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
+  { col: '1 / span 3',  row: '7 / span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
+  { col: '4 / span 3',  row: '7 / span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
+  { col: '1 / span 3',  row: '8 / span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
+  { col: '4 / span 3',  row: '8 / span 1', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
 ];
 
 // Mobile: 4 cols, scrollable
@@ -135,10 +143,14 @@ const LAYOUT_4 = [
   { col: '1 / span 2',  row: 'auto', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
   { col: '3 / span 2',  row: 'auto', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
   { col: '1 / span 4',  row: 'auto', cls: 'compact', titleRem: 0.85, fw: 400, clamp: 2, color: '#aaa' },
+  { col: '1 / span 2',  row: 'auto', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
+  { col: '3 / span 2',  row: 'auto', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
+  { col: '1 / span 2',  row: 'auto', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
+  { col: '3 / span 2',  row: 'auto', cls: 'compact', titleRem: 0.8,  fw: 400, clamp: 2, color: '#aaa' },
 ];
 
 // Small mobile: 2 cols
-const LAYOUT_2 = Array.from({ length: 11 }, (_, i) => ({
+const LAYOUT_2 = Array.from({ length: 15 }, (_, i) => ({
   col: i === 0 ? '1 / span 2' : `${(i % 2) + 1} / span 1`,
   row: 'auto',
   cls: i === 0 ? 'hero' : i < 3 ? 'feature' : 'compact',
