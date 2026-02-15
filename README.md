@@ -49,14 +49,80 @@ Open http://localhost:3000. The server fetches all RSS feeds on startup and refr
 | `/api/geo` | GET | Detect country from IP |
 | `/api/fetch` | POST | Trigger manual fetch |
 
-## Trending / Clustering
+## How It Works
 
-The system detects when the same story is covered by multiple sources using fuzzy title matching ([fuzzball](https://github.com/nol13/fuzzball.js)). More sources covering the same story = higher score = bigger card on the board.
+```
+                         Every 5 minutes
+                              |
+                              v
+              ┌───────────────────────────────┐
+              │          AGGREGATOR            │
+              │                               │
+              │  14 RSS feeds fetched in       │
+              │  parallel (Promise.allSettled)  │
+              └───────────┬───────────────────┘
+                          │
+          ┌───────────────┼───────────────┐
+          v               v               v
+    ┌──────────┐   ┌──────────┐   ┌──────────┐
+    │ BioBio   │   │ Tercera  │   │ Universo │  ...
+    │ Chile/CL │   │ Chile/CL │   │ Ecuador  │
+    └────┬─────┘   └────┬─────┘   └────┬─────┘
+         │              │              │
+         └──────────────┼──────────────┘
+                        v
+              ┌───────────────────┐
+              │    SQLite (WAL)   │
+              │                   │
+              │  INSERT OR IGNORE │
+              │  (dedup by URL)   │
+              └─────────┬─────────┘
+                        │
+                        v
+              ┌───────────────────────────────┐
+              │       CLUSTERING ENGINE        │
+              │                               │
+              │  1. Get articles from last 72h │
+              │  2. Normalize titles           │
+              │     - Strip prefixes           │
+              │     - Lowercase + trim         │
+              │  3. Fuzzy match all pairs      │
+              │     - fuzzball token_sort_ratio │
+              │     - Threshold: 70% similar   │
+              │     - Skip same-source pairs   │
+              │  4. Group into clusters        │
+              └─────────┬─────────────────────┘
+                        │
+                        v
+              ┌───────────────────────────────┐
+              │         SCORING               │
+              │                               │
+              │  base = sources × 30 points   │
+              │  recency = e^(-hours / 24)    │
+              │  score = base × recency       │
+              │                               │
+              │  1 source  → score = 0        │
+              │  2 sources → ≈60 × recency    │
+              │  3 sources → ≈90 × recency    │
+              │  4 sources → ≈120 × recency   │
+              └─────────┬─────────────────────┘
+                        │
+                        v
+              ┌───────────────────────────────┐
+              │        FRONTEND BOARD          │
+              │                               │
+              │  score = 0   → compact card   │
+              │  score > 0   → "multi-source" │
+              │  score ≥ 60  → "HOT" badge    │
+              │                               │
+              │  12-column collage grid        │
+              │  Hero card for top story       │
+              └───────────────────────────────┘
+```
 
-- 2 sources = "multi-source" badge
-- 3+ sources = "HOT" badge, hero card
+### Tag Extraction
 
-Score formula: `(unique_sources * 30) * e^(-age_hours / 24)`
+Tags are extracted from article titles of the last 72 hours per country. Words are normalized (accents removed), filtered against ~100 Spanish stopwords, and ranked by frequency across unique articles.
 
 ## Deploy to Google Cloud Run
 
