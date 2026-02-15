@@ -1,90 +1,100 @@
 # tagadata.com
 
-Agregador de noticias multi-pais. Board tipo collage que muestra titulares de medios populares e independientes. Detecta noticias que se repiten entre medios y las destaca como trending.
+Multi-country news aggregator. A collage-style board that shows headlines from mainstream and independent outlets. Detects when the same story is covered by multiple sources and highlights it as trending.
 
-Solo muestra: titular, medio, link y fecha. Sin contenido completo.
+Only displays: headline, source, link, and time. No full article content.
 
-## Paises
+## Countries
 
 ### Chile
-| Medio | Tipo | Feed |
+| Source | Type | Feed |
 |---|---|---|
-| BioBioChile | Independiente | RSS |
+| BioBioChile | Independent | RSS |
 | Cooperativa | Mainstream (radio) | RSS |
 | La Tercera | Mainstream | RSS |
-| CIPER Chile | Investigativo | RSS |
-| The Clinic | Independiente | RSS |
-| Interferencia | Independiente | RSS |
-| El Desconcierto | Independiente | RSS |
+| CIPER Chile | Investigative | RSS |
+| The Clinic | Independent | RSS |
+| Interferencia | Independent | RSS |
+| El Desconcierto | Independent | RSS |
 
 ### Ecuador
-| Medio | Tipo | Feed |
+| Source | Type | Feed |
 |---|---|---|
 | El Comercio | Mainstream | RSS |
 | El Universo | Mainstream | RSS |
 | Metro Ecuador | Mainstream | RSS |
-| GK | Independiente | RSS |
-| La Barra Espaciadora | Investigativo | RSS |
-| Plan V | Investigativo | RSS |
-| Confirmado | Independiente | RSS |
+| GK | Independent | RSS |
+| La Barra Espaciadora | Investigative | RSS |
+| Plan V | Investigative | RSS |
+| Confirmado | Independent | RSS |
 
-## Quick Start (local)
+## Quick Start
 
 ```bash
 npm install
 npm run dev
 ```
 
-Requiere configurar las env vars de Vercel Postgres (ver seccion Deploy).
+Open http://localhost:3000. The server fetches all RSS feeds on startup and refreshes every 5 minutes.
 
 ## API
 
-| Endpoint | Metodo | Descripcion |
+| Endpoint | Method | Description |
 |---|---|---|
-| `/` | GET | Board UI |
-| `/api/news` | GET | JSON con noticias |
-| `/api/news?country=cl` | GET | Filtrar por pais |
-| `/api/news?tag=gobierno` | GET | Filtrar por tag |
-| `/api/news?sort=score` | GET | Ordenar por trending |
-| `/api/geo` | GET | Detectar pais por IP |
-| `/api/cron/fetch` | GET | Trigger fetch (cron) |
+| `/` | GET | Collage board UI |
+| `/api/news?country=cl` | GET | News filtered by country (`cl`, `ec`) |
+| `/api/news?tag=gobierno` | GET | Filter by trending tag |
+| `/api/news?sort=score` | GET | Sort by trending score |
+| `/api/news?limit=15&offset=0` | GET | Pagination |
+| `/api/geo` | GET | Detect country from IP |
+| `/api/fetch` | POST | Trigger manual fetch |
 
-## Ranking / Trending
+## Trending / Clustering
 
-El sistema detecta cuando la misma noticia es cubierta por multiples medios usando fuzzy matching de titulares (fuzzball). Mas medios cubren la misma noticia = mayor score = card mas grande en el board.
+The system detects when the same story is covered by multiple sources using fuzzy title matching ([fuzzball](https://github.com/nol13/fuzzball.js)). More sources covering the same story = higher score = bigger card on the board.
 
-- 2 medios = badge "multi-source"
-- 3+ medios = badge "HOT", card gigante
+- 2 sources = "multi-source" badge
+- 3+ sources = "HOT" badge, hero card
 
-## Deploy a Google Cloud Run
+Score formula: `(unique_sources * 30) * e^(-age_hours / 24)`
+
+## Deploy to Google Cloud Run
 
 ```bash
-gcloud builds submit --tag gcr.io/YOUR_PROJECT/tagadata
+# Build and push image
+gcloud builds submit --tag us-central1-docker.pkg.dev/PROJECT_ID/docker-repo/tagadata
+
+# Deploy with always-on instance (required for the 5-min fetch interval)
 gcloud run deploy tagadata \
-  --image gcr.io/YOUR_PROJECT/tagadata \
+  --image us-central1-docker.pkg.dev/PROJECT_ID/docker-repo/tagadata \
   --platform managed \
+  --region us-central1 \
   --allow-unauthenticated \
-  --memory 256Mi
+  --memory 512Mi \
+  --min-instances 1 \
+  --max-instances 3
 ```
 
-O con Docker local:
+Or run locally with Docker:
 
 ```bash
 docker build -t tagadata .
 docker run -p 8080:8080 tagadata
 ```
 
-## Agregar un nuevo pais
+> `--min-instances 1` keeps at least one instance alive so the `setInterval` fetch runs continuously.
 
-1. Crear carpeta `src/sources/XX/` con los modulos de cada medio:
+## Adding a New Country
+
+1. Create source modules in `src/sources/XX/`:
 
 ```js
 const Parser = require('rss-parser');
 const { normalizeUrl } = require('../../utils');
 
 const parser = new Parser();
-const FEED_URL = 'https://ejemplo.com/feed/';
-const SOURCE_NAME = 'Nuevo Medio';
+const FEED_URL = 'https://example.com/feed/';
+const SOURCE_NAME = 'New Source';
 const COUNTRY = 'xx';
 
 async function fetch() {
@@ -101,16 +111,17 @@ async function fetch() {
 module.exports = { fetch, SOURCE_NAME, FEED_URL, COUNTRY };
 ```
 
-2. Registrarlo en `src/aggregator.js`
-3. Agregar el pais en `COUNTRIES` y `SOURCE_COLORS_BY_COUNTRY` en `src/public/app.js`
-4. Agregar el pais en `VALID_COUNTRIES` en `api/news.js` y `api/geo.js`
-5. Agregar colores `.source-dot.nombre` en `src/public/styles.css`
+2. Register sources in `src/aggregator.js`
+3. Add country to `COUNTRIES` and `SOURCE_COLORS_BY_COUNTRY` in `src/public/app.js`
+4. Add country code to `VALID_COUNTRIES` in `src/server.js`
+5. Add `.source-dot.name` colors in `src/public/styles.css`
 
 ## Stack
 
-- **Backend:** Node.js + Express
-- **Base de datos:** SQLite (better-sqlite3)
+- **Runtime:** Node.js 22
+- **Server:** Express 5
+- **Database:** SQLite (better-sqlite3, WAL mode)
 - **RSS:** rss-parser
-- **Clustering:** fuzzball (fuzzy matching de titulares)
-- **Frontend:** HTML/CSS/JS vanilla
+- **Clustering:** fuzzball (fuzzy string matching)
+- **Frontend:** Vanilla HTML/CSS/JS
 - **Deploy:** Docker / Google Cloud Run
