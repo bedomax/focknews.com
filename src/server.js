@@ -13,26 +13,22 @@ const VALID_COUNTRIES = ['cl', 'ec'];
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// API: Detect country from IP using free geoip service
+// API: Detect country from IP
 app.get('/api/geo', async (req, res) => {
   try {
-    // Get client IP (support proxies)
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
       || req.socket.remoteAddress;
 
-    // For localhost/dev, default to 'cl'
+    // Localhost/dev → default to Chile
     if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168')) {
       return res.json({ country: 'cl' });
     }
 
-    const response = await fetch(`https://ipapi.co/${ip}/country_code/`);
-    const code = (await response.text()).trim().toLowerCase();
+    const response = await fetch(`http://ip-api.com/json/${ip}?fields=countryCode`);
+    const data = await response.json();
+    const code = (data.countryCode || '').toLowerCase();
 
-    if (VALID_COUNTRIES.includes(code)) {
-      return res.json({ country: code });
-    }
-    // Default to Chile for unsupported countries
-    res.json({ country: 'cl' });
+    res.json({ country: VALID_COUNTRIES.includes(code) ? code : 'cl' });
   } catch {
     res.json({ country: 'cl' });
   }
